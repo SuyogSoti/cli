@@ -18,8 +18,9 @@ fn worktree_add_branch(_branch: String) -> Result<(), Error> {
     let result = git2::Repository::open(".");
     match result {
         Ok(repo) => {
-            let path = repo.path().display().to_string();
-            println!("{}", path);
+            let path = repo.path();
+            repo.workdir().map(|idx| println!("{}", idx.display()));
+            println!("{}", path.display());
             return Ok(());
         }
         Err(err) => Err(Error::new(err.message())),
