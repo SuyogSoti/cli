@@ -14,30 +14,34 @@ pub fn worktree(wt_cmd: WortreeCommands) -> Result<(), Error> {
     }
 }
 
-fn get_repo_root(path: &std::path::PathBuf) -> Option<git2::Repository> {
-    let repo = git2::Repository::open(path);
-    match repo.as_ref().map(|r| r.is_bare()) {
-        Ok(true) => match repo {
-            Ok(repo) => Some(repo),
-            _ => None,
-        },
-        _ => match path.parent() {
-            Some(parent) => get_repo_root(&parent.to_path_buf()),
-            None => None,
-        },
+fn map_git2_err(err: git2::Error) -> Error {
+    Error::new(err.message())
+}
+
+fn map_io_err(err: std::io::Error) -> Error {
+    Error::new(err.to_string().as_str())
+}
+
+fn get_repo_root(path: &std::path::PathBuf) -> Result<git2::Repository, Error> {
+    let repo = git2::Repository::open(path).map_err(map_git2_err)?;
+    if repo.is_bare() {
+        return Ok(repo);
     }
+    let parent = path.parent().ok_or_else(|| Error::new("not git repo"))?;
+    get_repo_root(&parent.to_path_buf())
 }
 
 fn worktree_add_branch(branch: String) -> Result<(), Error> {
-    let repo = std::env::current_dir().map(|pathbuf| get_repo_root(&pathbuf));
-    match repo {
-        Ok(Some(repo)) => Ok(println!(
-            "{} -  need to add {}",
-            repo.path().display(),
-            branch
-        )),
-        _ => Ok(()),
+    let cur_dir = std::env::current_dir().map_err(map_io_err)?;
+    let repo = get_repo_root(&cur_dir)?;
+    let branch_exists = repo.find_worktree(&branch).is_ok();
+    if branch_exists {
+        return Ok(());
     }
+    let wt_path = repo.path().join(std::path::Path::new(&branch));
+    repo.worktree(&branch, &wt_path, None)
+        .map_err(map_git2_err)?;
+    Ok(())
 }
 
 fn worktree_delete_branch(branch: String) -> Result<(), Error> {
