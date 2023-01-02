@@ -45,11 +45,7 @@ fn worktree_add_branch(branch: String) -> Result<(), Error> {
 }
 
 fn worktree_delete_branch(branch: String) -> Result<(), Error> {
-    let result = git2::Repository::open(".").and_then(|repo| repo.find_worktree(branch.as_str()));
-    match result {
-        Ok(_path) => {
-            return Ok(());
-        }
-        Err(err) => Err(Error::new(err.message())),
-    }
+    let repo = git2::Repository::open(".").map_err(map_git2_err)?;
+    let wt = repo.find_worktree(branch.as_str()).map_err(map_git2_err)?;
+    wt.prune(None).map_err(map_git2_err)
 }
