@@ -39,6 +39,8 @@ fn worktree_add_branch(branch: String) -> Result<(), Error> {
         return Ok(());
     }
     let wt_path = repo.path().join(std::path::Path::new(&branch));
+    // TODO(suyogsoti): figure out how to set wt add options like track the existing branch and
+    // upstream origin if possible
     repo.worktree(&branch, &wt_path, None)
         .map_err(map_git2_err)?;
     Ok(())
@@ -47,5 +49,6 @@ fn worktree_add_branch(branch: String) -> Result<(), Error> {
 fn worktree_delete_branch(branch: String) -> Result<(), Error> {
     let repo = git2::Repository::open(".").map_err(map_git2_err)?;
     let wt = repo.find_worktree(branch.as_str()).map_err(map_git2_err)?;
+    // TODO(suyogsoti): this prune doesn't do anything
     wt.prune(None).map_err(map_git2_err)
 }
