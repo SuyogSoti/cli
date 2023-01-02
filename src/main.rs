@@ -11,7 +11,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum TopLevelCmds {
-    WT {
+    Wt {
+        #[command(subcommand)]
+        wt_cmd: worktree::WortreeCommands,
+    },
+    WtTmux {
         #[command(subcommand)]
         wt_cmd: worktree::WortreeCommands,
     },
@@ -20,7 +24,8 @@ enum TopLevelCmds {
 fn main() {
     let cli: Cli = Cli::parse();
     let result = match cli.cmd {
-        TopLevelCmds::WT { wt_cmd } => worktree::worktree(wt_cmd),
+        TopLevelCmds::Wt { wt_cmd } => worktree::worktree(wt_cmd),
+        TopLevelCmds::WtTmux { wt_cmd } => worktree::worktree(wt_cmd),
     };
     match result {
         Err(err) => println!("Error executing command: {}", err.to_string()),
