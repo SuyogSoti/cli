@@ -31,17 +31,17 @@ fn get_repo_root(path: &std::path::PathBuf) -> Result<git2::Repository, Error> {
     get_repo_root(&parent.to_path_buf())
 }
 
-fn worktree_add_branch(branch: String) -> Result<(), Error> {
+fn worktree_add_branch(worktree: String) -> Result<(), Error> {
     let cur_dir = std::env::current_dir().map_err(map_io_err)?;
     let repo = get_repo_root(&cur_dir)?;
-    let branch_exists = repo.find_worktree(&branch).is_ok();
-    if branch_exists {
+    let worktree_exists = repo.find_worktree(&worktree).is_ok();
+    if worktree_exists {
         return Ok(());
     }
-    let wt_path = repo.path().join(std::path::Path::new(&branch));
+    let wt_path = repo.path().join(std::path::Path::new(&worktree));
     // TODO(suyogsoti): figure out how to set wt add options like track the existing branch and
     // upstream origin if possible
-    repo.worktree(&branch, &wt_path, None)
+    repo.worktree(&worktree, &wt_path, None)
         .map_err(map_git2_err)?;
     Ok(())
 }
@@ -49,6 +49,10 @@ fn worktree_add_branch(branch: String) -> Result<(), Error> {
 fn worktree_delete_branch(branch: String) -> Result<(), Error> {
     let repo = git2::Repository::open(".").map_err(map_git2_err)?;
     let wt = repo.find_worktree(branch.as_str()).map_err(map_git2_err)?;
-    // TODO(suyogsoti): this prune doesn't do anything
-    wt.prune(None).map_err(map_git2_err)
+    std::fs::remove_dir_all(wt.path()).map_err(map_io_err)?;
+    wt.prune(None).map_err(map_git2_err)?;
+    let mut branch = repo
+        .find_branch(&branch, git2::BranchType::Local)
+        .map_err(map_git2_err)?;
+    branch.delete().map_err(map_git2_err)
 }
