@@ -1,6 +1,5 @@
 mod errors;
 mod worktree;
-use tmux_interface;
 use clap::{Parser, Subcommand};
 
 /// Search for a pattern in a file and display the lines that contain it.
