@@ -21,17 +21,8 @@ pub fn worktree_tmux(wt_cmd: WortreeCommands) -> Result<(), Error> {
     }
 }
 
-// TODO(suyogsoti): this all needs to be an error macro
-fn map_git2_err(err: git2::Error) -> Error {
-    Error::new(err.message())
-}
-
-fn map_io_err(err: std::io::Error) -> Error {
-    Error::new(&err.to_string())
-}
-
 fn get_repo_root(path: &std::path::PathBuf) -> Result<git2::Repository, Error> {
-    let repo = git2::Repository::open(path).map_err(map_git2_err)?;
+    let repo = git2::Repository::open(path)?;
     if repo.is_bare() {
         return Ok(repo);
     }
@@ -40,17 +31,16 @@ fn get_repo_root(path: &std::path::PathBuf) -> Result<git2::Repository, Error> {
 }
 
 fn add_worktree(worktree: &str) -> Result<git2::Worktree, Error> {
-    let cur_dir = std::env::current_dir().map_err(map_io_err)?;
+    let cur_dir = std::env::current_dir()?;
     let repo = get_repo_root(&cur_dir)?;
     let existing_wt = repo.find_worktree(&worktree);
     if existing_wt.is_ok() {
-        return existing_wt.map_err(map_git2_err);
+        return Ok(existing_wt?);
     }
     let wt_path = repo.path().join(std::path::Path::new(&worktree));
     // TODO(suyogsoti): figure out how to set wt add options like track the existing branch and
     // upstream origin if possible
-    repo.worktree(&worktree, &wt_path, None)
-        .map_err(map_git2_err)
+    Ok(repo.worktree(&worktree, &wt_path, None)?)
 }
 
 fn worktree_add_branch(worktree: String) -> Result<(), Error> {
@@ -73,19 +63,16 @@ fn worktree_add_branch_attach_tmux(worktree: String) -> Result<(), Error> {
         .session_name(&session_name)
         .start_directory(wt.path().display().to_string())
         .detached()
-        .output()
-        .map_err(|err| Error::new(&err.to_string()))?;
-    let switch_success = tmux_interface::SwitchClient::new()
-        .target_session(&session_name)
-        .output()
-        .map_err(|err| Error::new(&err.to_string()))?;
-    if switch_success.success() {
-        return Ok(());
+        .output()?;
+    if std::env::var("TMUX").is_ok() {
+        tmux_interface::SwitchClient::new()
+            .target_session(&session_name)
+            .output()?;
+    } else {
+        tmux_interface::AttachSession::new()
+            .target_session(&session_name)
+            .output()?;
     }
-    tmux_interface::AttachSession::new()
-        .target_session(&session_name)
-        .output()
-        .map_err(|err| Error::new(&err.to_string()))?;
     Ok(())
 }
 
@@ -102,20 +89,17 @@ fn worktree_delete_branch_kill_tmux_sess(worktree: String) -> Result<(), Error> 
     let session_name = format!("{}_{}", String::from(proj), worktree.replace("/", "_"));
     tmux_interface::KillSession::new()
         .target_session(&session_name)
-        .output()
-        .map_err(|err| Error::new(&err.to_string()))?;
+        .output()?;
     Ok(())
 }
 
 fn cleanup_branch(branch: &str) -> Result<git2::Worktree, Error> {
-    let repo = git2::Repository::open(".").map_err(map_git2_err)?;
-    let wt = repo.find_worktree(branch).map_err(map_git2_err)?;
-    std::fs::remove_dir_all(wt.path()).map_err(map_io_err)?;
-    wt.prune(None).map_err(map_git2_err)?;
-    let mut branch = repo
-        .find_branch(&branch, git2::BranchType::Local)
-        .map_err(map_git2_err)?;
-    branch.delete().map_err(map_git2_err)?;
+    let repo = git2::Repository::open(".")?;
+    let wt = repo.find_worktree(branch)?;
+    std::fs::remove_dir_all(wt.path())?;
+    wt.prune(None)?;
+    let mut branch = repo.find_branch(&branch, git2::BranchType::Local)?;
+    branch.delete()?;
     return Ok(wt);
 }
 
