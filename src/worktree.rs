@@ -68,9 +68,7 @@ fn worktree_add_branch_attach_tmux(worktree: String) -> Result<(), Error> {
     let (repo, wt) = add_worktree(&worktree)?;
     let proj = repo
         .path()
-        .parent()
-        .map(|p| p.file_name())
-        .flatten()
+        .file_name()
         .map(|p| p.to_str())
         .flatten()
         .ok_or(Error::new("worktree creation unsuccessful"))?;
