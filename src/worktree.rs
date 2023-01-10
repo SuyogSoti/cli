@@ -110,7 +110,7 @@ fn worktree_delete_branch_kill_tmux_sess(worktree: String) -> Result<(), Error> 
 fn cleanup_branch(branch: &str) -> Result<git2::Worktree, Error> {
     let repo = git2::Repository::open(".")?;
     let wt = repo.find_worktree(branch)?;
-    std::fs::remove_dir_all(wt.path())?;
+    std::fs::remove_dir_all(repo.path().join(wt.path()))?;
     wt.prune(None)?;
     let mut branch = repo.find_branch(&branch, git2::BranchType::Local)?;
     branch.delete()?;
