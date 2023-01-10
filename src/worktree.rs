@@ -32,11 +32,12 @@ fn get_repo_root(path: &std::path::PathBuf) -> Result<git2::Repository, Error> {
 
 fn create_wt_base_folders(repo: &git2::Repository, worktree: &str) -> Result<(), Error> {
     let wt_config_base = repo.path().join("worktrees/");
-    std::path::Path::new(&worktree)
+    let wt_path = std::path::Path::new(&worktree);
+    wt_path
         .parent()
         .map(|p| std::fs::create_dir_all(wt_config_base.join(p)))
         .unwrap_or(Ok(()))?;
-    std::path::Path::new(&worktree)
+    wt_path
         .parent()
         .map(|p| std::fs::create_dir_all(repo.path().join(p)))
         .unwrap_or(Ok(()))?;
