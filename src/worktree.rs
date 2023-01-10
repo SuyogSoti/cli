@@ -30,17 +30,32 @@ fn get_repo_root(path: &std::path::PathBuf) -> Result<git2::Repository, Error> {
     get_repo_root(&parent.to_path_buf())
 }
 
-fn add_worktree(worktree: &str) -> Result<git2::Worktree, Error> {
+fn create_wt_base_folders(repo: &git2::Repository, worktree: &str) -> Result<(), Error> {
+    let wt_config_base = repo.path().join("worktrees/");
+    std::path::Path::new(&worktree)
+        .parent()
+        .map(|p| std::fs::create_dir_all(wt_config_base.join(p)))
+        .unwrap_or(Ok(()))?;
+    std::path::Path::new(&worktree)
+        .parent()
+        .map(|p| std::fs::create_dir_all(repo.path().join(p)))
+        .unwrap_or(Ok(()))?;
+    Ok(())
+}
+
+fn add_worktree(worktree: &str) -> Result<(git2::Repository, git2::Worktree), Error> {
     let cur_dir = std::env::current_dir()?;
     let repo = get_repo_root(&cur_dir)?;
     let existing_wt = repo.find_worktree(&worktree);
     if existing_wt.is_ok() {
-        return Ok(existing_wt?);
+        return Ok((repo, existing_wt?));
     }
-    let wt_path = repo.path().join(std::path::Path::new(&worktree));
+    create_wt_base_folders(&repo, &worktree)?;
     // TODO(suyogsoti): figure out how to set wt add options like track the existing branch and
     // upstream origin if possible
-    Ok(repo.worktree(&worktree, &wt_path, None)?)
+    let wt_path = repo.path().join(std::path::Path::new(&worktree));
+    let wt = repo.worktree(&worktree, &wt_path, None)?;
+    Ok((repo, wt))
 }
 
 fn worktree_add_branch(worktree: String) -> Result<(), Error> {
@@ -49,8 +64,8 @@ fn worktree_add_branch(worktree: String) -> Result<(), Error> {
 }
 
 fn worktree_add_branch_attach_tmux(worktree: String) -> Result<(), Error> {
-    let wt = add_worktree(&worktree)?;
-    let proj = wt
+    let (repo, wt) = add_worktree(&worktree)?;
+    let proj = repo
         .path()
         .parent()
         .map(|p| p.file_name())
