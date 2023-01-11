@@ -28,3 +28,13 @@ impl From<tmux_interface::Error> for Error {
         Error::new(&error.to_string())
     }
 }
+impl From<&str> for Error {
+    fn from(error: &str) -> Self {
+        Error::new(&error)
+    }
+}
+impl From<String> for Error {
+    fn from(error: String) -> Self {
+        Error::new(&error)
+    }
+}
