@@ -91,12 +91,10 @@ fn worktree_add_branch_attach_tmux(worktree: String) -> Result<(), Error> {
 }
 
 fn worktree_delete_branch_kill_tmux_sess(worktree: String) -> Result<(), Error> {
-    let wt = cleanup_branch(&worktree)?;
-    let proj = wt
+    let repo = cleanup_branch(&worktree)?;
+    let proj = repo
         .path()
-        .parent()
-        .map(|p| p.file_name())
-        .flatten()
+        .file_name()
         .map(|p| p.to_str())
         .flatten()
         .ok_or(Error::new("worktree creation unsuccessful"))?;
@@ -107,14 +105,18 @@ fn worktree_delete_branch_kill_tmux_sess(worktree: String) -> Result<(), Error> 
     Ok(())
 }
 
-fn cleanup_branch(branch: &str) -> Result<git2::Worktree, Error> {
-    let repo = git2::Repository::open(".")?;
-    let wt = repo.find_worktree(branch)?;
-    std::fs::remove_dir_all(repo.path().join(wt.path()))?;
+fn cleanup_branch(worktree: &str) -> Result<git2::Repository, Error> {
+    let cur_dir = std::env::current_dir()?;
+    let repo = get_repo_root(&cur_dir)?;
+    let wt = repo.find_worktree(&worktree)?;
+    std::fs::remove_dir_all(wt.path())?;
     wt.prune(None)?;
-    let mut branch = repo.find_branch(&branch, git2::BranchType::Local)?;
-    branch.delete()?;
-    return Ok(wt);
+    {
+        // this is to scope repo's borrow
+        let mut branch = repo.find_branch(&worktree, git2::BranchType::Local)?;
+        branch.delete()?;
+    }
+    Ok(repo)
 }
 
 fn worktree_delete_branch(branch: String) -> Result<(), Error> {
