@@ -110,7 +110,9 @@ pub fn worktree_delete_branch_kill_tmux_sess(worktree: String) -> Result<(), Err
 fn cleanup_branch(worktree: &str) -> Result<git2::Repository, Error> {
     let cur_dir = std::env::current_dir()?;
     let repo = get_repo_root(&cur_dir)?;
-    let wt = repo.find_worktree(&worktree)?;
+    let wt = repo
+        .find_worktree(&worktree)
+        .map_err(|_| format!("Worktree {} not found", worktree))?;
     std::fs::remove_dir_all(wt.path())?;
     wt.prune(None)?;
     {
