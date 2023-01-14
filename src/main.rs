@@ -23,7 +23,7 @@ enum TopLevelCmds {
         worktree: String,
     },
     WTTD {
-        branch: String,
+        worktree: String,
     },
 }
 
@@ -33,7 +33,7 @@ fn main() {
         TopLevelCmds::Wt { wt_cmd } => worktree::worktree(wt_cmd),
         TopLevelCmds::WtTmux { wt_cmd } => worktree::worktree_tmux(wt_cmd),
         TopLevelCmds::WTTA { worktree: branch } => worktree::worktree_add_branch_attach_tmux(branch),
-        TopLevelCmds::WTTD { branch } => worktree::worktree_delete_branch_kill_tmux_sess(branch),
+        TopLevelCmds::WTTD { worktree: branch } => worktree::worktree_delete_branch_kill_tmux_sess(branch),
     };
     match result {
         Err(err) => println!("Error executing command: {}", err.to_string()),
