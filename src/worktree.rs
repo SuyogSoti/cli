@@ -90,7 +90,7 @@ pub fn worktree_add_branch_attach_tmux(worktree: String) -> Result<(), Error> {
     Ok(())
 }
 
-fn worktree_delete_branch_kill_tmux_sess(worktree: String) -> Result<(), Error> {
+pub fn worktree_delete_branch_kill_tmux_sess(worktree: String) -> Result<(), Error> {
     let repo = cleanup_branch(&worktree)?;
     let proj = repo
         .path()
