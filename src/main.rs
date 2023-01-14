@@ -20,7 +20,7 @@ enum TopLevelCmds {
         wt_cmd: worktree::WortreeCommands,
     },
     WTTA {
-        branch: String,
+        worktree: String,
     },
     WTTD {
         branch: String,
@@ -32,7 +32,7 @@ fn main() {
     let result = match cli.cmd {
         TopLevelCmds::Wt { wt_cmd } => worktree::worktree(wt_cmd),
         TopLevelCmds::WtTmux { wt_cmd } => worktree::worktree_tmux(wt_cmd),
-        TopLevelCmds::WTTA { branch } => worktree::worktree_add_branch_attach_tmux(branch),
+        TopLevelCmds::WTTA { worktree: branch } => worktree::worktree_add_branch_attach_tmux(branch),
         TopLevelCmds::WTTD { branch } => worktree::worktree_delete_branch_kill_tmux_sess(branch),
     };
     match result {
