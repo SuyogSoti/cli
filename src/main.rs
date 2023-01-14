@@ -19,6 +19,9 @@ enum TopLevelCmds {
         #[command(subcommand)]
         wt_cmd: worktree::WortreeCommands,
     },
+    WTTA {
+        branch: String,
+    },
 }
 
 fn main() {
@@ -26,6 +29,7 @@ fn main() {
     let result = match cli.cmd {
         TopLevelCmds::Wt { wt_cmd } => worktree::worktree(wt_cmd),
         TopLevelCmds::WtTmux { wt_cmd } => worktree::worktree_tmux(wt_cmd),
+        TopLevelCmds::WTTA { branch } => worktree::worktree_add_branch_attach_tmux(branch),
     };
     match result {
         Err(err) => println!("Error executing command: {}", err.to_string()),

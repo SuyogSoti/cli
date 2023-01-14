@@ -64,7 +64,7 @@ fn worktree_add_branch(worktree: String) -> Result<(), Error> {
     Ok(())
 }
 
-fn worktree_add_branch_attach_tmux(worktree: String) -> Result<(), Error> {
+pub fn worktree_add_branch_attach_tmux(worktree: String) -> Result<(), Error> {
     let (repo, wt) = add_worktree(&worktree)?;
     let proj = repo
         .path()
