@@ -22,12 +22,14 @@ pub fn worktree_tmux(wt_cmd: WortreeCommands) -> Result<(), Error> {
 }
 
 fn get_repo_root(path: &std::path::PathBuf) -> Result<git2::Repository, Error> {
-    let repo = git2::Repository::open(path)?;
-    if repo.is_bare() {
-        return Ok(repo);
+    let repo = git2::Repository::open(path);
+    match repo.as_ref().map(|r| r.is_bare()) {
+        Ok(true) => Ok(repo?),
+        _ => {
+            let parent = path.parent().ok_or_else(|| Error::new("not git repo"))?;
+            get_repo_root(&parent.to_path_buf())
+        }
     }
-    let parent = path.parent().ok_or_else(|| Error::new("not git repo"))?;
-    get_repo_root(&parent.to_path_buf())
 }
 
 fn create_wt_base_folders(repo: &git2::Repository, worktree: &str) -> Result<(), Error> {
