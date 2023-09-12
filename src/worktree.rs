@@ -74,7 +74,7 @@ pub fn worktree_add_branch_attach_tmux(worktree: String) -> Result<(), Error> {
         .map(|p| p.to_str())
         .flatten()
         .ok_or(Error::new("worktree creation unsuccessful"))?;
-    let session_name = format!("{}_{}", String::from(proj), worktree.replace("/", "_"));
+    let session_name = format!("{}_{}", String::from(proj), worktree.replace("/", "_")).replace(".", "_");
     tmux_interface::NewSession::new()
         .session_name(&session_name)
         .start_directory(wt.path().display().to_string())
