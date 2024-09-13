@@ -14,3 +14,4 @@ clap = {version = "4.0.32", features = ["derive"]}
 git2 = "0.15.0"
 rayon = "1.6.1"
 tmux_interface = "0.2.1"
+openssl = { version = "0.10", features = ["vendored"] }
